@@ -16,19 +16,24 @@ function getCurrentBranch {
     if [ -d .git ];
     then
         _branch=$(git branch | grep -o "\* .*" | sed -ne 's/* //p');
-        if [ "$_branch" != "" ]; # ie. a new repository
+        if [ "$_branch" != "" ];
         then
-            _changeset=$(git rev-parse "$_branch" | cut -c 1-5)
-            echo "$_branch:$_changeset ";
+            if [[ "$_branch" != "("HEAD* ]]; # check for detached head
+            then
+                _changeset=$(git rev-parse "$_branch" | cut -c 1-5);
+                echo "$_branch:$_changeset ";
+            else
+                echo "$_branch ";
+            fi
         else
             echo "... ";
         fi
     elif [ -d .hg ];
     then
         _branch=$(hg branch)
-        if [ "$_branch" != "" ]; # ie. a new repository
+        if [ "$_branch" != "" ];
         then
-            _changeset=$(hg id | sed -ne 's/\([a-z0-9]*\)[ a-z]*/\1/p' | cut -c 1-5)
+            _changeset=$(hg id | sed -ne 's/\([a-z0-9]*\)[ a-z]*/\1/p' | cut -c 1-5);
             echo "$_branch:$_changeset ";
         else
             echo "... ";
