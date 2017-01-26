@@ -42,7 +42,7 @@ function getCurrentBranch {
 }
 
 # append to your current prompt, if that works for you
-export PS1="$PS1 $(getCurrentBranch)"
+# export PS1="$PS1 $(getCurrentBranch)"
 
 # This is my current prompt
 # looks like this:
