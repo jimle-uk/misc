@@ -1,0 +1,38 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname $0)
+PID_FILE=$SCRIPT_DIR/.pid
+LOCK_FILE=$SCRIPT_DIR/.lock
+LOG_FILE=$SCRIPT_DIR/../log/setproxy.log
+ERROR_FILE=$SCRIPT_DIR/../log/setproxy.errors
+
+# Should get the $SSH_HOST variable from the envirnoment
+if [ -z ${SSH_HOST+x} ]; then echo "SSH_HOST environment variable not defined. Aborting ..." && exit 1; fi
+
+# Make sure an instance does not already exist
+if [ -e ".lock" ]; then echo "Aborting: Proxy is already running ..." && exit 1; fi
+
+# Set the SOCKS port
+if [ -z ${SOCKS_PORT+x} ]; then SOCKS_PORT=12345; fi
+
+# Get the current active network service name
+# This could be "WI-FI", "Ethernet" etc ...
+source $SCRIPT_DIR/utils/getNetworkServiceName
+NETWORK_SERVICE=$(getNetworkServiceName)
+
+echo "enabling proxy on $NETWORK_SERVICE ..."
+sudo networksetup -setsocksfirewallproxy "$NETWORK_SERVICE" localhost $SOCKS_PORT
+
+# LOCK_FILE ensures only one instance of this command should run at any given time
+touch $LOCK_FILE
+
+echo "[$(date)] Started tunnel on $NETWORK_SERVICE ($SOCKS_PORT)" >> $LOG_FILE
+
+# Here we're saving the command as a string so we can grep it later in the task manager
+CMD="ssh -f -N -D $SOCKS_PORT $SSH_HOST"
+echo "starting ssh tunnel on $SOCKS_PORT ..."
+
+eval $CMD &> $ERROR_FILE
+
+# gets the PID of the ssh tunnel by grepping the command we ran previously
+ps aux | grep -v "grep" | grep "$CMD" | sed -n "1p" | awk -F' ' '{print $2}' > $PID_FILE

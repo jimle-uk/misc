@@ -1,0 +1,36 @@
+#!/bin/bash
+# Automation script to start a ssh tunnel and configure networksetup for my mac.
+# 2017 Jim Le <jim@height.io>
+#
+# Motivation: Dev environment, Learning bash scripting
+#
+# On macOS, chrome defaults to the mac's system proxy settings (as in, you can't
+# set them directly through chrome settings). This script sets those proxy settings
+# through use of the macOS `networksetup` command.
+
+SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+SCRIPT_NAME=$(basename $0)
+
+# resolve if calling from symlink
+if [ -L "$SCRIPT_DIR/$SCRIPT_NAME" ]; then
+	SCRIPT_DIR=$( dirname $(readlink "$SCRIPT_DIR/$SCRIPT_NAME") )
+fi
+
+function onStart {
+	$SCRIPT_DIR/src/start
+}
+
+function onStop {
+	$SCRIPT_DIR/src/stop
+}
+
+function onHelp {
+	cat $SCRIPT_DIR/src/help
+}
+
+case "$1" in
+    start      )  onStart; exit 0;;
+    stop       )  onStop;  exit 0;;
+    -h | --help)  onHelp;  exit 0;;
+    *)      echo '> Unrecognised command given. Type `setproxy --help for usage.'; exit 0;;
+esac

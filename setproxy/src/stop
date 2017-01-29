@@ -1,0 +1,32 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname $0)
+PID_FILE=$SCRIPT_DIR/.pid
+LOCK_FILE=$SCRIPT_DIR/.lock
+LOG_FILE=$SCRIPT_DIR/../log/setproxy.log
+ERROR_FILE=$SCRIPT_DIR/../log/setproxy.errors
+
+# Get the current active network service name
+# This could be "WI-FI", "Ethernet" etc ...
+source $SCRIPT_DIR/utils/getNetworkServiceName
+NETWORK_SERVICE=$(getNetworkServiceName)
+
+echo "disabling proxy on $NETWORK_SERVICE ..."
+sudo networksetup -setsocksfirewallproxystate "$NETWORK_SERVICE" off
+
+# If we have a pid saved, let's use that to kill the ssh tunnel
+if [ -e $PID_FILE ];
+then
+  echo "stopping ssh tunnel ..."
+  kill $(cat $PID_FILE)
+  rm -f $PID_FILE
+else
+  echo "ssh tunnel pid not found. You might want to check your background processes ..."
+  ps aux | grep "ssh "
+fi
+
+# Remove the lock file
+rm -f $LOCK_FILE
+
+echo "[$(date)] Stopped tunnel on $NETWORK_SERVICE" >> $LOG_FILE
+echo "Done"
